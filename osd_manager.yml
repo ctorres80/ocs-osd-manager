@@ -1,0 +1,48 @@
+---
+  - name: "Playbook for Ceph OSD mapping in OpenShift"
+    hosts: localhost
+    connection: local
+    vars:
+      file_tmp_1: "./file_tmp_1"
+      file_tmp_2: "./file_tmp_2"
+      name_space: "openshift-storage"
+      ceph_osd_tree: "ceph osd tree -f json-pretty"
+    vars_prompt:
+      - name: lets_run
+        prompt: |
+              Hey there, what do you want to do?
+              1=Listing OSD information deviceset|pv|pvc|host
+              2=Replace a failed OSD
+        private: no
+        default: "0"
+    tasks:
+      - name: Listing OSD information deviceset|pv|pvc|host
+        block:
+          - name: "Get device->pv->pvc->host information"
+            shell: |
+              oc get pv -o json | jq '.items[] | select(.spec.claimRef.name | tostring | contains("deviceset") ) | [.spec.claimRef.name,.metadata.name,.spec.local.path,.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0].values[0]] | @csv'  | sed -e 's/"//g; s/\\//g'  | sort -u -k 1 -t ','  > {{ file_tmp_1 }}
+
+          - name: "Get device_set->osd.id information"
+            shell: |
+              TOOLS_POD=$(oc get pods -n openshift-storage -l app=rook-ceph-tools -o name)
+              oc exec -n {{ name_space }} $TOOLS_POD -it -- {{ ceph_osd_tree }} | tr -dc '[:print:]' | jq '.nodes[] | select(.type=="host") | [ .name,.children[] ] | @csv' | sed -e 's/"//g; s/\\//g' | sort -u -k 1 -t ',' > {{ file_tmp_2 }}
+
+          - name: "Assessment in progress"
+            shell: |
+              echo "PVC,OSD_ID,PV,MOUNT_POINT,PROVISIONED-BY" > ./tmp
+              join -t , {{ file_tmp_2 }} {{ file_tmp_1 }} >> ./tmp
+              cat ./tmp | column -t -s ","
+            register: get_information
+
+          - name: Clean files
+            file:
+              path: "{{ file_tmp_1 }}"
+              state: absent
+
+          - name: Clean files
+            file:
+              path: "{{ file_tmp_2 }}"
+              state: absent
+
+          - debug: msg="{{ get_information.stdout_lines }}"
+        when: lets_run|int == 1
