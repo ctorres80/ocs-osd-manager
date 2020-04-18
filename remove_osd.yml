@@ -1,0 +1,54 @@
+---
+- name: Listing OSD information deviceset|pv|pvc|host
+  block:
+    - pause:
+        prompt: |
+              Please provide the osd.ID to remove:
+        echo: yes
+      register: osd_id
+
+    - pause:
+        prompt: |
+              Are you sure do you want to remove {{ osd_id.user_input }} yes/no :
+        echo: yes
+      register: osd_remove
+
+    - name: Check OSD status
+      shell: |
+        TOOLS_POD=$(oc get pods -n {{ name_space }} -l app=rook-ceph-tools -o name)
+        oc exec -n openshift-storage  $TOOLS_POD -it -- ceph osd tree -f json-pretty |  tr -dc '[:print:]' | jq '.nodes[] | select(.name=="{{ osd_id.user_input }}") | [ .status ] | @csv' | sed -e 's/"//g; s/\\//g'
+      register: osd_status
+    - name: Print OSD status
+      debug:
+        msg: "WARNING: You're not allow to remove an osd in {{ osd_status.stdout }} status "
+      when: osd_status.stdout == "up"
+#    - name: "Get device->pv->pvc->host information"
+#      shell: |
+#        echo "PVC,OSD_ID,PV,MOUNT_POINT,PROVISIONED-BY" > {{ file_tmp_3 }}
+#        TOOLS_POD=$(oc get pods -n {{ name_space }} -l app=rook-ceph-tools -o name)
+#        oc get pv -o json | jq '.items[] | select(.spec.claimRef.name | tostring | contains("deviceset") ) | [.spec.claimRef.name,.metadata.name,.spec.local.path,.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0].values[0]] | @csv'  | sed -e 's/"//g; s/\\//g'  | sort -u -k 1 -t ','  > {{ file_tmp_1 }}
+#        oc exec -n {{ name_space }} $TOOLS_POD -it -- {{ ceph_osd_tree }} | tr -dc '[:print:]' | jq '.nodes[] | select(.type=="host") | [ .name,.children[] ] | @csv' | sed -e 's/"//g; s/\\//g' | sort -u -k 1 -t ',' > {{ file_tmp_2 }}
+#        join -t , {{ file_tmp_2 }} {{ file_tmp_1 }} >> {{ file_tmp_3 }}
+#        cat {{ file_tmp_3 }} | column -t -s ","
+#        echo
+#        echo "OSD_ID,TYPE,WEIGHT,STATUS" > {{ file_tmp_3 }}
+#        oc exec -n {{ name_space }}  $TOOLS_POD -it -- {{ ceph_osd_tree }} |  tr -dc '[:print:]' | jq '.nodes[] | select(.type=="osd") | [ .name,.device_class,.crush_weight,.status ] | @csv' | sed -e 's/"//g; s/\\//g'  | sort -u -k 1 -t ',' >> {{ file_tmp_3 }}
+#        cat {{ file_tmp_3 }} | column -t -s ","
+#      register: get_information
+#    - debug: msg="{{ get_information.stdout_lines }}"
+#    - debug: msg="{{ osd_status }}"
+    - name: Clean files
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - "{{ file_tmp_1 }}"
+        - "{{ file_tmp_2 }}"
+        - "{{ file_tmp_3 }}"
+#    - pause:
+#        prompt: |
+#              Hey there, what do you want to do?
+#              1=Listing OSD information deviceset|pv|pvc|host
+#              2=Replace a failed OSD (interactive)
+#        echo: yes
+#      register: lets_run
