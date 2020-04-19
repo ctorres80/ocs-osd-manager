@@ -44,7 +44,10 @@
         ocs_node=$(oc get pv -o json | jq --arg ocs_pvc "$ocs_pvc" '.items[] | select(.spec.claimRef.name == $ocs_pvc) | [.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0].values[0]] | @csv' | sed -e 's/"//g; s/\\//g')
         ocs_pv=$(oc get pv -o json | jq --arg ocs_pvc "$ocs_pvc" '.items[] | select(.spec.claimRef.name == $ocs_pvc) | [.metadata.name] | @csv' | sed -e 's/"//g; s/\\//g')
         ocs_mount=$(oc get pv -o json | jq --arg ocs_pvc "$ocs_pvc"  '.items[] | select(.spec.claimRef.name == $ocs_pvc) | [.spec.local.path] | @csv' | sed -e 's/"//g; s/\\//g')
-        echo "$ocs_pvc $ocs_node $ocs_pv $ocs_mount rook-ceph-osd-{{ osd_id.user_input }}"
+        ocs_osd_prepare=$(oc describe pvc $ocs_pvc | grep 'rook-ceph-osd-prepare-ocs-deviceset' | awk '{print $NF}')
+#        oc -n {{ name_space }} delete pod $ocs_osd_prepare
+#        oc -n {{ name_space }} delete pvc $ocs_pvc
+#        echo "$ocs_pvc $ocs_node $ocs_pv $ocs_mount rook-ceph-osd-{{ osd_id.user_input }} $ocs_osd_prepare"
       register: osdout_status
       when: yes_continue.user_input == "yes"
     - debug: msg="{{ osdout_status.stdout }}"
