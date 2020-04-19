@@ -3,40 +3,53 @@
   block:
     - pause:
         prompt: |
-              Please provide the osd.ID to remove:
-        echo: yes
+              Please provide the osd.ID to remove (integer from 0 to 100000):
       register: osd_id
-
-    - pause:
-        prompt: |
-              Are you sure do you want to remove {{ osd_id.user_input }} yes/no :
-        echo: yes
-      register: osd_remove
 
     - name: Check OSD status
       shell: |
         TOOLS_POD=$(oc get pods -n {{ name_space }} -l app=rook-ceph-tools -o name)
-        oc exec -n openshift-storage  $TOOLS_POD -it -- ceph osd tree -f json-pretty |  tr -dc '[:print:]' | jq '.nodes[] | select(.name=="{{ osd_id.user_input }}") | [ .status ] | @csv' | sed -e 's/"//g; s/\\//g'
+        oc exec -n {{ name_space }}  $TOOLS_POD -it -- ceph osd tree -f json-pretty |  tr -dc '[:print:]' | jq '.nodes[] | select(.name=="osd.{{ osd_id.user_input }}") | [ .status ] | @csv' | sed -e 's/"//g; s/\\//g'
       register: osd_status
-    - name: Print OSD status
-      debug:
-        msg: "WARNING: You're not allow to remove an osd in {{ osd_status.stdout }} status "
+
+    - name: Warning print OSD status up
+      fail:
+        msg: "WARNING: osd.{{ osd_id.user_input }} is in not valid status: {{ osd_status.stdout }}"
       when: osd_status.stdout == "up"
-#    - name: "Get device->pv->pvc->host information"
-#      shell: |
-#        echo "PVC,OSD_ID,PV,MOUNT_POINT,PROVISIONED-BY" > {{ file_tmp_3 }}
-#        TOOLS_POD=$(oc get pods -n {{ name_space }} -l app=rook-ceph-tools -o name)
-#        oc get pv -o json | jq '.items[] | select(.spec.claimRef.name | tostring | contains("deviceset") ) | [.spec.claimRef.name,.metadata.name,.spec.local.path,.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0].values[0]] | @csv'  | sed -e 's/"//g; s/\\//g'  | sort -u -k 1 -t ','  > {{ file_tmp_1 }}
-#        oc exec -n {{ name_space }} $TOOLS_POD -it -- {{ ceph_osd_tree }} | tr -dc '[:print:]' | jq '.nodes[] | select(.type=="host") | [ .name,.children[] ] | @csv' | sed -e 's/"//g; s/\\//g' | sort -u -k 1 -t ',' > {{ file_tmp_2 }}
-#        join -t , {{ file_tmp_2 }} {{ file_tmp_1 }} >> {{ file_tmp_3 }}
-#        cat {{ file_tmp_3 }} | column -t -s ","
-#        echo
-#        echo "OSD_ID,TYPE,WEIGHT,STATUS" > {{ file_tmp_3 }}
-#        oc exec -n {{ name_space }}  $TOOLS_POD -it -- {{ ceph_osd_tree }} |  tr -dc '[:print:]' | jq '.nodes[] | select(.type=="osd") | [ .name,.device_class,.crush_weight,.status ] | @csv' | sed -e 's/"//g; s/\\//g'  | sort -u -k 1 -t ',' >> {{ file_tmp_3 }}
-#        cat {{ file_tmp_3 }} | column -t -s ","
-#      register: get_information
-#    - debug: msg="{{ get_information.stdout_lines }}"
-#    - debug: msg="{{ osd_status }}"
+
+    - name: Warning wrong osd
+      fail:
+        msg: "WARNING: osd.{{ osd_id.user_input }} is in not valid osd.ID"
+      when: osd_status.stdout == ""
+
+    - name: Check pg status
+      shell: |
+        TOOLS_POD=$(oc get pods -n {{ name_space }} -l app=rook-ceph-tools -o name)
+        oc exec -n {{ name_space }}  $TOOLS_POD -it -- ceph pg stat -f json-pretty |  tr -dc '[:print:]' | jq '. | [ .pg_summary.num_pg_by_state[0].name ] | @csv' | sed -e 's/"//g; s/\\//g'
+      register: pg_status
+      when: osd_status.stdout == "down"
+    - pause:
+        prompt: |
+              ceph pg stat is: " {{ pg_status.stdout }} " Are you sure do you want to continue  ( yes/no )
+      register: yes_continue
+#
+#        oc exec -n {{ name_space }}  $TOOLS_POD -it -- ceph osd out osd.{{ osd_id.user_input }}
+#        oc exec -n {{ name_space }}  $TOOLS_POD -it -- ceph osd purge osd.{{ osd_id.user_input }} --yes-i-really-mean-it
+#        oc scale -n {{ name_space }} deployment rook-ceph-osd-{{ osd_id.user_input }} --replicas=0
+
+    - name: Remove and clean osd {{ osd_id.user_input }}
+      shell: |
+        TOOLS_POD=$(oc get pods -n {{ name_space }} -l app=rook-ceph-tools -o name)
+        ocs_pvc=$(oc exec -n {{ name_space }} $TOOLS_POD -it -- ceph osd tree -f json-pretty | tr -dc '[:print:]' | jq '.nodes[] | select(.children[0]=={{ osd_id.user_input }}) | [ .name ] | @csv' | sed -e 's/"//g; s/\\//g')
+        ocs_node=$(oc get pv -o json | jq --arg ocs_pvc "$ocs_pvc" '.items[] | select(.spec.claimRef.name == $ocs_pvc) | [.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0].values[0]] | @csv' | sed -e 's/"//g; s/\\//g')
+        ocs_pv=$(oc get pv -o json | jq --arg ocs_pvc "$ocs_pvc" '.items[] | select(.spec.claimRef.name == $ocs_pvc) | [.metadata.name] | @csv' | sed -e 's/"//g; s/\\//g')
+        ocs_mount=$(oc get pv -o json | jq --arg ocs_pvc "$ocs_pvc"  '.items[] | select(.spec.claimRef.name == $ocs_pvc) | [.spec.local.path] | @csv' | sed -e 's/"//g; s/\\//g')
+        echo "$ocs_pvc $ocs_node $ocs_pv $ocs_mount rook-ceph-osd-{{ osd_id.user_input }}"
+      register: osdout_status
+      when: yes_continue.user_input == "yes"
+    - debug: msg="{{ osdout_status.stdout }}"
+
+
     - name: Clean files
       file:
         path: "{{ item }}"
@@ -45,10 +58,3 @@
         - "{{ file_tmp_1 }}"
         - "{{ file_tmp_2 }}"
         - "{{ file_tmp_3 }}"
-#    - pause:
-#        prompt: |
-#              Hey there, what do you want to do?
-#              1=Listing OSD information deviceset|pv|pvc|host
-#              2=Replace a failed OSD (interactive)
-#        echo: yes
-#      register: lets_run
