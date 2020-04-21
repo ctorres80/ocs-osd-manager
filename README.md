@@ -2,7 +2,6 @@
 
 ## Introduction 
 Those ansible playbooks provides an intereactive menu for storage operations.
-Hope this can help you, any comments are more than welcome please send me an email to carlos.torres.alayo@gmail.com  
 
 ## What those playbook can do for you?
 The playbooks will offer the following interactive menu:
@@ -14,7 +13,6 @@ The playbooks will offer the following interactive menu:
     [0]:
 
 ## Testing environment
-We have:
 - OCP Cluster v4.3 with 3 masters
 - IPI deployment (fuly automated with OpenShift machinesets)
 - OCS v4.3 operator with loca-storage (Techpreview)
