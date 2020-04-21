@@ -16,7 +16,6 @@ The playbooks will offer the following interactive menu:
 
 ## Testing environment
 Following the cluster for testing the playbooks:
-
 * OCP Cluster v4.3 with 3 masters
 * IPI deployment (fuly automated with OpenShift machinesets)
 * OCS v4.3 operator with loca-storage (Techpreview)
