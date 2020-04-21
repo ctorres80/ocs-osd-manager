@@ -5,7 +5,7 @@ Those ansible playbooks provides an intereactive menu for storage operations.
 
 WARNING: Those playbooks are personal tools and don't recommended and supported in production clusters.
 
-## What those playbook can do for you?
+## What can I do for you?
 The playbooks will offer the following interactive menu:
     
     Hey there, what do you want to do?
@@ -147,4 +147,118 @@ Use case 1: Discover the OCS nodes and return the local-block CR useful to creat
     PLAY RECAP ***************************************************************************************************************************************************************************************************************
     localhost                  : ok=7    changed=5    unreachable=0    failed=0    skipped=12   rescued=0    ignored=0
 
-Use case 2: Discover ypur local devices with device-byid path and return a CR, please remember to configure variable "disk_size_bytes" in vars/vars.yml (it should be whatever size but greater than Operating System disks)
+    [ctorres-redhat.com@clientvm 0 ~/deploy/tools/ocs-osd-manager]$ oc create -f local-storage-block.yaml
+    localvolume.local.storage.openshift.io/local-block created
+    [ctorres-redhat.com@clientvm 0 ~/deploy/tools/ocs-osd-manager]$ oc get pv
+    NAME                                       CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS      CLAIM                        STORAGECLASS   REASON   AGE
+    local-pv-10ee1aeb                          1769Gi     RWO            Delete           Available                                localblock              7m10s
+    local-pv-111134d4                          1769Gi     RWO            Delete           Available                                localblock              7m10s
+    local-pv-1cd1beec                          1769Gi     RWO            Delete           Available                                localblock              6m54s
+    local-pv-37eb7cdf                          1769Gi     RWO            Delete           Available                                localblock              6m54s
+    local-pv-51a7939b                          1769Gi     RWO            Delete           Available                                localblock              7m10s
+    local-pv-643f2246                          1769Gi     RWO            Delete           Available                                localblock              6m54s
+    local-pv-69d0199                           1769Gi     RWO            Delete           Available                                localblock              7m10s
+    local-pv-70cc1dc8                          1769Gi     RWO            Delete           Available                                localblock              7m10s
+    local-pv-90e812                            1769Gi     RWO            Delete           Available                                localblock              7m10s
+    local-pv-9e7e33ea                          1769Gi     RWO            Delete           Available                                localblock              7m10s
+    local-pv-ac1a8ed5                          1769Gi     RWO            Delete           Available                                localblock              6m54s
+    local-pv-ad10eded                          1769Gi     RWO            Delete           Available                                localblock              7m10s
+    pvc-98b3dc0b-730d-48f6-813f-5fb732845c79   1Gi        RWO            Delete           Bound       terminal/terminal-hub-data   gp2                     3d7h
+
+Use case 2: Replace OSD (work in progress, some issues with local-storage pvs)
+
+use case 3: List the device-pv-pvc-osd.id-node
+
+    [ctorres-redhat.com@clientvm 130 ~/deploy/tools/ocs-osd-manager]$ ansible-playbook osd_manager.yml
+    [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
+
+    Hey there, what do you want to do?
+    1=List device-byid for Create/Update loca-storage CR
+    2=Replace a failed OSD (interactive)
+    3=Listing OSD information deviceset|pv|pvc|host
+    [0]: 3
+
+    PLAY [Playbook for Ceph OSD mapping in OpenShift] ******************************************************************************************************************************************************************************************
+
+    TASK [Gathering Facts] *********************************************************************************************************************************************************************************************************************
+    ok: [localhost]
+
+    TASK [Collect OCS workers] *****************************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Collect device by-id and size] *******************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Collect device by-id] ****************************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Print to screen config file ./local-storage-block.yaml] ******************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [debug] *******************************************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Clean files] *************************************************************************************************************************************************************************************************************************
+    skipping: [localhost] => (item=./file_tmp_1)
+    skipping: [localhost] => (item=./file_tmp_2)
+
+    TASK [pause] *******************************************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Check OSD status] ********************************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Warning print OSD status up] *********************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Warning wrong osd] *******************************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Check pg status] *********************************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [pause] *******************************************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Remove and clean osd {{ osd_id.user_input }}] ****************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [debug] *******************************************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Clean files] *************************************************************************************************************************************************************************************************************************
+    skipping: [localhost] => (item=./file_tmp_1)
+    skipping: [localhost] => (item=./file_tmp_2)
+    skipping: [localhost] => (item=./file_tmp_3)
+
+    TASK [Get device->pv->pvc->host information] ***********************************************************************************************************************************************************************************************
+    changed: [localhost]
+
+    TASK [debug] *******************************************************************************************************************************************************************************************************************************
+    ok: [localhost] => {
+        "msg": [
+            "PVC                      OSD_ID  PV                 MOUNT_POINT                            PROVISIONED-BY",
+            "ocs-deviceset-0-0-2tcpk  0       local-pv-ac1a8ed5  /mnt/local-storage/localblock/nvme2n1  ip-10-0-157-251",
+            "ocs-deviceset-0-1-b7kjd  1       local-pv-1cd1beec  /mnt/local-storage/localblock/nvme3n1  ip-10-0-157-251",
+            "ocs-deviceset-1-0-qcn9j  2       local-pv-69d0199   /mnt/local-storage/localblock/nvme0n1  ip-10-0-163-72",
+            "ocs-deviceset-1-1-trzzj  3       local-pv-9e7e33ea  /mnt/local-storage/localblock/nvme1n1  ip-10-0-163-72",
+            "ocs-deviceset-2-0-xkmph  5       local-pv-70cc1dc8  /mnt/local-storage/localblock/nvme0n1  ip-10-0-141-44",
+            "ocs-deviceset-2-1-zfjq4  4       local-pv-90e812    /mnt/local-storage/localblock/nvme2n1  ip-10-0-141-44",
+            "",
+            "OSD_ID  TYPE  WEIGHT              STATUS",
+            "osd.0   ssd   1.7274932861328125  up",
+            "osd.1   ssd   1.7274932861328125  up",
+            "osd.2   ssd   1.7274932861328125  up",
+            "osd.3   ssd   1.7274932861328125  up",
+            "osd.4   ssd   1.7274932861328125  up",
+            "osd.5   ssd   1.7274932861328125  up"
+        ]
+    }
+
+    TASK [Clean files] *************************************************************************************************************************************************************************************************************************
+    changed: [localhost] => (item=./file_tmp_1)
+    changed: [localhost] => (item=./file_tmp_2)
+    changed: [localhost] => (item=./file_tmp_3)
+
+    PLAY RECAP *********************************************************************************************************************************************************************************************************************************
+    localhost                  : ok=4    changed=2    unreachable=0    failed=0    skipped=15   rescued=0    ignored=0
