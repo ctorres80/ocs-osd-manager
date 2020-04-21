@@ -16,9 +16,8 @@ The playbooks will offer the following interactive menu:
 
 ## Testing environment
 Following the cluster for testing the playbooks:
-* OCP Cluster v4.3 with 3 masters
-* IPI deployment (fuly automated with OpenShift machinesets)
-* OCS v4.3 operator with loca-storage (Techpreview)
+* OCP Cluster v4.3 with 3 masters, IPI deployment
+* OCS v4.3 operator with local-storage (Techpreview)
 * OCS i3.8xlarge AWS instances with 4 local NVMes with 1.8TB size each  
     
      
@@ -36,7 +35,7 @@ Following the cluster for testing the playbooks:
 
 ## Let's doing some testing
 
-Use case 1: Discover ypur local devices with device-byid path and return a CR, please remember to configure variable "disk_size_bytes" in vars/vars.yml (it should be whatever size but greater than Operating System disks)
+Use case 1: Discover the OCS nodes and return the local-block CR useful to create devices with device-byid format, please remember to configure variable "disk_size_bytes" in vars/vars.yml (it should be whatever size but greater than Operating System disks)
 
     [ctorres-redhat.com@clientvm 0 ~/deploy/tools/ocs-osd-manager]$ ansible-playbook osd_manager.yml
     [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
@@ -147,3 +146,5 @@ Use case 1: Discover ypur local devices with device-byid path and return a CR, p
 
     PLAY RECAP ***************************************************************************************************************************************************************************************************************
     localhost                  : ok=7    changed=5    unreachable=0    failed=0    skipped=12   rescued=0    ignored=0
+
+Use case 2: Discover ypur local devices with device-byid path and return a CR, please remember to configure variable "disk_size_bytes" in vars/vars.yml (it should be whatever size but greater than Operating System disks)
