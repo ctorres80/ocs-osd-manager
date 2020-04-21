@@ -9,10 +9,10 @@ WARNING: Those playbooks are personal tools and don't recommended and supported 
 The playbooks will offer the following interactive menu:
     
     Hey there, what do you want to do?
-1=List device-byid for Create/Update loca-storage CR
-2=Replace a failed OSD (interactive)
-3=Listing OSD information deviceset|pv|pvc|host
- [0]: 1
+    1=List device-byid for Create/Update loca-storage CR
+    2=Replace a failed OSD (interactive)
+    3=Listing OSD information deviceset|pv|pvc|host
+    [0]: 1
 
 ## Testing environment
 Following the cluster for testing the playbooks:
