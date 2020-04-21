@@ -13,11 +13,12 @@ The playbooks will offer the following interactive menu:
     [0]:
 
 ## Testing environment
+Following the cluster for testing the playbooks:
 - OCP Cluster v4.3 with 3 masters
 - IPI deployment (fuly automated with OpenShift machinesets)
 - OCS v4.3 operator with loca-storage (Techpreview)
 - OCS i3.8xlarge AWS instances with 4 local NVMes with 1.8TB size each
-    
+
     [ctorres-redhat.com@clientvm 130 ~/deploy/tools/ocs-osd-manager]$ oc get machines
     NAME                                                   PHASE     TYPE         REGION         ZONE            AGE
     cluster-milano-9521-8xh7k-master-0                     Running   m5.xlarge    eu-central-1   eu-central-1a   3d6h
