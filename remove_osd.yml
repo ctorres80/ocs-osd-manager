@@ -1,5 +1,5 @@
 ---
-- name: Listing OSD information deviceset|pv|pvc|host
+- name: Remove OSD
   block:
     - pause:
         prompt: |
