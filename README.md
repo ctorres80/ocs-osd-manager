@@ -35,7 +35,7 @@ Following the cluster for testing the playbooks:
         ocs-worker-eu-central-1b-kfv4k                         Running   i3.8xlarge   eu-central-1   eu-central-1b   48m
         ocs-worker-eu-central-1c-kwfs6                         Running   i3.8xlarge   eu-central-1   eu-central-1c   48m
 
-## Let's doing some testing
+## Let's do some testing
 
 Use case 1: Discover the OCS nodes and return the local-block CR useful to create devices with device-byid format, please remember to configure variable "disk_size_bytes" in vars/vars.yml (it should be whatever size but greater than Operating System disks)
 
