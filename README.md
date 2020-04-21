@@ -1,11 +1,12 @@
-# Playbooks for some useful taks in OpenShift Container Storage
+# Playbooks for simplify some taks with local-storage in OpenShift Container Storage
 
 ## Introduction 
-The ansible playbooks provides an intereactive menu for storage operations.
+Those ansible playbooks provides an intereactive menu for storage operations.
 Hope this can help you, any comments are more than welcome please send me an email to carlos.torres.alayo@gmail.com  
 
-## What this playbook can do for you?
-The role will automate following workflow:
+## What those playbook can do for you?
+The playbooks will offer the following interactive menu:
+    
     Hey there, what do you want to do?
     1=Listing OSD information deviceset|pv|pvc|host
     2=Replace a failed OSD (interactive)
@@ -13,99 +14,23 @@ The role will automate following workflow:
     [0]:
 
 ## Testing environment
-We have 3 nodes in the ceph cluster, each node works at the same time as a client: 
+We have:
+- OCP Cluster v4.3 with 3 masters
+- IPI deployment (fuly automated with OpenShift machinesets)
+- OCS v4.3 operator with loca-storage (Techpreview)
+- OCS i3.8xlarge AWS instances with 4 local NVMes with 1.8TB size each
 
-    [ansible@host1 deployment]$ ansible-inventory --graph
-    @all:
-      |--@clients:
-      |  |--host1
-      |  |--host2
-      |  |--host3
-      |--@grafana-server:
-      |  |--host1
-      |--@iscsigws:
-      |  |--host1
-      |  |--host2
-      |--@mdss:
-      |  |--host2
-      |  |--host3
-      |--@mgrs:
-      |  |--host1
-      |  |--host2
-      |  |--host3
-      |--@mons:
-      |  |--host1
-      |  |--host2
-      |  |--host3
-      |--@osds:
-      |  |--host1
-      |  |--host2
-      |  |--host3
-      |--@rgws:
-      |  |--host2
-      |  |--host3
-      |--@ungrouped:
-
-In my lab I running Red Hat Cep Storage v4:  
-
-    [ansible@host1 deployment]$ sudo ceph --version
-    ceph version 14.2.4-125.el8cp (db63624068590e593c47150c7574d08c1ec0d3e4) nautilus (stable)
-
-In the Ceph cluster we have 9 OSDs:
-    
-    [ansible@host1 deployment]$ sudo ceph osd tree
-    ID CLASS WEIGHT  TYPE NAME      STATUS REWEIGHT PRI-AFF
-    -1       0.87025 root default
-    -5       0.29008     host host1
-    0   hdd 0.09669         osd.0      up  1.00000 1.00000
-    3   hdd 0.09669         osd.3      up  1.00000 1.00000
-    6   hdd 0.09669         osd.6      up  1.00000 1.00000
-    -7       0.29008     host host2
-    1   hdd 0.09669         osd.1      up  1.00000 1.00000
-    4   hdd 0.09669         osd.4      up  1.00000 1.00000
-    7   hdd 0.09669         osd.7      up  1.00000 1.00000
-    -3       0.29008     host host3
-    2   hdd 0.09669         osd.2      up  1.00000 1.00000
-    5   hdd 0.09669         osd.5      up  1.00000 1.00000
-    8   hdd 0.09669         osd.8      up  1.00000 1.00000
-
-And based on Nautilus version the default object store is bluestore, we can easily check with this command:
-
-    [ansible@host1 deployment]$ sudo ceph osd tree | grep "osd." | awk '{print $4}' | while read osd; do echo $osd; sudo ceph osd metadata osd.$i | grep osd_objectstore ; done
-    osd.0
-        "osd_objectstore": "bluestore",
-    osd.3
-        "osd_objectstore": "bluestore",
-    osd.6
-        "osd_objectstore": "bluestore",
-    osd.1
-        "osd_objectstore": "bluestore",
-    osd.4
-        "osd_objectstore": "bluestore",
-    osd.7
-        "osd_objectstore": "bluestore",
-    osd.2
-        "osd_objectstore": "bluestore",
-    osd.5
-        "osd_objectstore": "bluestore",
-    osd.8
-        "osd_objectstore": "bluestore",
-
-The workload is defined in the followig variables:
-
-    [ansible@host1 deployment]$ cat roles/rbd_ceph_performance/defaults/main.yml
-      ---
-      pool_name: 'rbd'
-      rbd_name: 'volume_testing'
-      rbd_size: '5G'
-      io_type: 'rw'
-      io_size: '64K'
-      io_threads: '1'
-      io_total: '3G'
-      io_pattern: 'rand'
-      rw_mix_read: 50
-      rbd_image_name: '{{ rbd_name }}_{{ ansible_hostname }}'
-      path_fio_files: '/root/ceph_performance'
+    [ctorres-redhat.com@clientvm 130 ~/deploy/tools/ocs-osd-manager]$ oc get machines
+    NAME                                                   PHASE     TYPE         REGION         ZONE            AGE
+    cluster-milano-9521-8xh7k-master-0                     Running   m5.xlarge    eu-central-1   eu-central-1a   3d6h
+    cluster-milano-9521-8xh7k-master-1                     Running   m5.xlarge    eu-central-1   eu-central-1b   3d6h
+    cluster-milano-9521-8xh7k-master-2                     Running   m5.xlarge    eu-central-1   eu-central-1c   3d6h
+    cluster-milano-9521-8xh7k-worker-eu-central-1a-svlkq   Running   m5.4xlarge   eu-central-1   eu-central-1a   3d6h
+    cluster-milano-9521-8xh7k-worker-eu-central-1b-g7lfr   Running   m5.4xlarge   eu-central-1   eu-central-1b   3d6h
+    cluster-milano-9521-8xh7k-worker-eu-central-1c-r54sg   Running   m5.4xlarge   eu-central-1   eu-central-1c   3d5h
+    ocs-worker-eu-central-1a-hlppq                         Running   i3.8xlarge   eu-central-1   eu-central-1a   48m
+    ocs-worker-eu-central-1b-kfv4k                         Running   i3.8xlarge   eu-central-1   eu-central-1b   48m
+    ocs-worker-eu-central-1c-kwfs6                         Running   i3.8xlarge   eu-central-1   eu-central-1c   48m
 
 ## Let's have fun
 
