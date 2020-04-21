@@ -5,6 +5,8 @@ Those ansible playbooks provides an intereactive menu for storage operations.
 
 WARNING: Those playbooks are personal tools and don't recommended and supported in production clusters.
 
+REQUIREMENTS: ansible and jq
+
 ## What can I do for you?
 The playbooks will offer the following interactive menu:
     
