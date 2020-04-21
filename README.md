@@ -9,10 +9,10 @@ WARNING: Those playbooks are personal tools and don't recommended and supported 
 The playbooks will offer the following interactive menu:
     
     Hey there, what do you want to do?
-    1=Listing OSD information deviceset|pv|pvc|host
-    2=Replace a failed OSD (interactive)
-    3=List device-byid for Create/Update loca-storage CR
-    [0]:
+1=List device-byid for Create/Update loca-storage CR
+2=Replace a failed OSD (interactive)
+3=Listing OSD information deviceset|pv|pvc|host
+ [0]: 1
 
 ## Testing environment
 Following the cluster for testing the playbooks:
@@ -36,68 +36,21 @@ Following the cluster for testing the playbooks:
 
 ## Let's doing some testing
 
-Use case: I want to discovery my local devices with device-byid path
+Use case 1: Discover ypur local devices with device-byid path and return a CR, please remember to configure variable "disk_size_bytes" in vars/vars.yml (it should be whatever size but greater than Operating System disks)
 
-    [ctorres-redhat.com@clientvm 130 ~/deploy/tools/ocs-osd-manager]$ ansible --version
-    ansible 2.8.8
-    config file = /etc/ansible/ansible.cfg
-    configured module search path = [u'/home/ctorres-redhat.com/.ansible/plugins/modules', u'/usr/share/ansible/plugins/modules']
-    ansible python module location = /usr/lib/python2.7/site-packages/ansible
-    executable location = /usr/bin/ansible
-    python version = 2.7.5 (default, May 31 2018, 09:41:32) [GCC 4.8.5 20150623 (Red Hat 4.8.5-28)]
     [ctorres-redhat.com@clientvm 0 ~/deploy/tools/ocs-osd-manager]$ ansible-playbook osd_manager.yml
     [WARNING]: provided hosts list is empty, only localhost is available. Note that the implicit localhost does not match 'all'
 
     Hey there, what do you want to do?
-    1=Listing OSD information deviceset|pv|pvc|host
+    1=List device-byid for Create/Update loca-storage CR
     2=Replace a failed OSD (interactive)
-    3=List device-byid for Create/Update loca-storage CR
-    [0]: 3
+    3=Listing OSD information deviceset|pv|pvc|host
+    [0]: 1
 
     PLAY [Playbook for Ceph OSD mapping in OpenShift] ************************************************************************************************************************************************************************
 
     TASK [Gathering Facts] ***************************************************************************************************************************************************************************************************
     ok: [localhost]
-
-    TASK [Get device->pv->pvc->host information] *****************************************************************************************************************************************************************************
-    skipping: [localhost]
-
-    TASK [debug] *************************************************************************************************************************************************************************************************************
-    skipping: [localhost]
-
-    TASK [Clean files] *******************************************************************************************************************************************************************************************************
-    skipping: [localhost] => (item=./file_tmp_1)
-    skipping: [localhost] => (item=./file_tmp_2)
-    skipping: [localhost] => (item=./file_tmp_3)
-
-    TASK [pause] *************************************************************************************************************************************************************************************************************
-    skipping: [localhost]
-
-    TASK [Check OSD status] **************************************************************************************************************************************************************************************************
-    skipping: [localhost]
-
-    TASK [Warning print OSD status up] ***************************************************************************************************************************************************************************************
-    skipping: [localhost]
-
-    TASK [Warning wrong osd] *************************************************************************************************************************************************************************************************
-    skipping: [localhost]
-
-    TASK [Check pg status] ***************************************************************************************************************************************************************************************************
-    skipping: [localhost]
-
-    TASK [pause] *************************************************************************************************************************************************************************************************************
-    skipping: [localhost]
-
-    TASK [Remove and clean osd {{ osd_id.user_input }}] **********************************************************************************************************************************************************************
-    skipping: [localhost]
-
-    TASK [debug] *************************************************************************************************************************************************************************************************************
-    skipping: [localhost]
-
-    TASK [Clean files] *******************************************************************************************************************************************************************************************************
-    skipping: [localhost] => (item=./file_tmp_1)
-    skipping: [localhost] => (item=./file_tmp_2)
-    skipping: [localhost] => (item=./file_tmp_3)
 
     TASK [Collect OCS workers] ***********************************************************************************************************************************************************************************************
     changed: [localhost]
@@ -151,6 +104,46 @@ Use case: I want to discovery my local devices with device-byid path
     TASK [Clean files] *******************************************************************************************************************************************************************************************************
     changed: [localhost] => (item=./file_tmp_1)
     changed: [localhost] => (item=./file_tmp_2)
+
+    TASK [pause] *************************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Check OSD status] **************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Warning print OSD status up] ***************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Warning wrong osd] *************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Check pg status] ***************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [pause] *************************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Remove and clean osd {{ osd_id.user_input }}] **********************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [debug] *************************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Clean files] *******************************************************************************************************************************************************************************************************
+    skipping: [localhost] => (item=./file_tmp_1)
+    skipping: [localhost] => (item=./file_tmp_2)
+    skipping: [localhost] => (item=./file_tmp_3)
+
+    TASK [Get device->pv->pvc->host information] *****************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [debug] *************************************************************************************************************************************************************************************************************
+    skipping: [localhost]
+
+    TASK [Clean files] *******************************************************************************************************************************************************************************************************
+    skipping: [localhost] => (item=./file_tmp_1)
+    skipping: [localhost] => (item=./file_tmp_2)
+    skipping: [localhost] => (item=./file_tmp_3)
 
     PLAY RECAP ***************************************************************************************************************************************************************************************************************
     localhost                  : ok=7    changed=5    unreachable=0    failed=0    skipped=12   rescued=0    ignored=0
