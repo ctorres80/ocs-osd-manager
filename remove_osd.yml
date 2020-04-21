@@ -32,26 +32,31 @@
         prompt: |
               ceph pg stat is: " {{ pg_status.stdout }} " Are you sure do you want to continue  ( yes/no )
       register: yes_continue
-#
-#        oc exec -n {{ name_space }}  $TOOLS_POD -it -- ceph osd out osd.{{ osd_id.user_input }}
-#        oc exec -n {{ name_space }}  $TOOLS_POD -it -- ceph osd purge osd.{{ osd_id.user_input }} --yes-i-really-mean-it
-#        oc scale -n {{ name_space }} deployment rook-ceph-osd-{{ osd_id.user_input }} --replicas=0
 
     - name: Remove and clean osd {{ osd_id.user_input }}
       shell: |
         TOOLS_POD=$(oc get pods -n {{ name_space }} -l app=rook-ceph-tools -o name)
         ocs_pvc=$(oc exec -n {{ name_space }} $TOOLS_POD -it -- ceph osd tree -f json-pretty | tr -dc '[:print:]' | jq '.nodes[] | select(.children[0]=={{ osd_id.user_input }}) | [ .name ] | @csv' | sed -e 's/"//g; s/\\//g')
-        ocs_node=$(oc get pv -o json | jq --arg ocs_pvc "$ocs_pvc" '.items[] | select(.spec.claimRef.name == $ocs_pvc) | [.spec.nodeAffinity.required.nodeSelectorTerms[0].matchExpressions[0].values[0]] | @csv' | sed -e 's/"//g; s/\\//g')
         ocs_pv=$(oc get pv -o json | jq --arg ocs_pvc "$ocs_pvc" '.items[] | select(.spec.claimRef.name == $ocs_pvc) | [.metadata.name] | @csv' | sed -e 's/"//g; s/\\//g')
         ocs_mount=$(oc get pv -o json | jq --arg ocs_pvc "$ocs_pvc"  '.items[] | select(.spec.claimRef.name == $ocs_pvc) | [.spec.local.path] | @csv' | sed -e 's/"//g; s/\\//g')
         ocs_osd_prepare=$(oc describe pvc $ocs_pvc | grep 'rook-ceph-osd-prepare-ocs-deviceset' | awk '{print $NF}')
-#        oc -n {{ name_space }} delete pod $ocs_osd_prepare
-#        oc -n {{ name_space }} delete pvc $ocs_pvc
-#        echo "$ocs_pvc $ocs_node $ocs_pv $ocs_mount rook-ceph-osd-{{ osd_id.user_input }} $ocs_osd_prepare"
+        ocs_node=$(oc get pods $ocs_osd_prepare -o=jsonpath='{.spec.nodeName}')
+        rook_operator_pod=$(oc get pods -l app=rook-ceph-operator -o jsonpath='{.items[*].metadata.name}')
+        device_by_id=$(oc debug node/$ocs_node -- ls -l /host$ocs_mount | awk '{print $NF}')
+        echo "$ocs_pvc $ocs_node $ocs_pv $ocs_mount rook-ceph-osd-{{ osd_id.user_input }} $ocs_osd_prepare $rook_operator_pod $device_by_id"
+        oc exec -n {{ name_space }}  $TOOLS_POD -it -- ceph osd out osd.{{ osd_id.user_input }}
+        oc exec -n {{ name_space }}  $TOOLS_POD -it -- ceph osd purge osd.{{ osd_id.user_input }} --yes-i-really-mean-it
+        oc debug node/$ocs_node -- rm /host$ocs_mount
+        oc debug node/$ocs_node -- wipefs -a /host$ocs_mount
+        oc scale -n {{ name_space }} deployment rook-ceph-osd-{{ osd_id.user_input }} --replicas=0
+        oc -n {{ name_space }} delete deployment rook-ceph-osd-{{ osd_id.user_input }}
+        oc -n {{ name_space }} delete pod $ocs_osd_prepare
+        oc -n {{ name_space }} delete pvc $ocs_pvc
+        oc -n {{ name_space }} delete pv $ocs_pv
+        oc -n {{ name_space }} delete pod $rook_operator_pod
       register: osdout_status
       when: yes_continue.user_input == "yes"
     - debug: msg="{{ osdout_status.stdout }}"
-
 
     - name: Clean files
       file:
